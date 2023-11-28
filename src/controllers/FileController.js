@@ -2,22 +2,29 @@ const fileSchema = require("../models/file");
 const { uploadFile, deleteFile, ResponseErrorHelper, getFileBase64 } = require("../helpers");
 
 const create = async (req, res) => {
-    const { postulante_id, cargo_id } = req.body
-    const { cv } = req.files;
-    const cvFile = await uploadFile(cv);
+    try {
+        const { postulante_id, cargo_id } = req.body
+        let cvFile = null;
+        if (req.files) {
+            const { cv } = req.files;
+            cvFile = await uploadFile(cv);
+        }
 
-    const fileData = {
-        postulante_id: postulante_id,
-        cargo_id: cargo_id,
-        file_path: cvFile.filePath,
-        created_at: new Date()
+        const fileData = {
+            postulante_id: postulante_id,
+            cargo_id: cargo_id,
+            file_path: cvFile ? cvFile.filePath : null,
+            created_at: new Date()
+        }
+        const file = fileSchema(fileData);
+
+        file
+            .save()
+            .then((data) => res.json(data))
+            .catch((error) => res.json({ message: error }));
+    } catch (error) {
+        return ResponseErrorHelper.handle500({ res, error, msg: error.message })
     }
-    const file = fileSchema(fileData);
-
-    file
-        .save()
-        .then((data) => res.json(data))
-        .catch((error) => res.json({ message: error }));
 }
 
 const getAll = (req, res) => {

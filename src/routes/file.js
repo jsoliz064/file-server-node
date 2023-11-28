@@ -9,7 +9,6 @@ router.post("/files", [
     check('postulante_id').not().isEmpty().withMessage('postulante_id es obligatorio').isInt().withMessage('postulante_id debe ser de tipo entero'),
     check('cargo_id').not().isEmpty().withMessage('cargo_id es obligatorio').isInt().withMessage('cargo_id debe ser de tipo entero'),
     validateFields,
-    validateFileUpload
 ],FileController.create);
 
 router.get("/files", FileController.getAll);
