@@ -1,7 +1,5 @@
-const ValidateUploadFileMiddleware = require('./ValidateUploadFileMiddleware');
-const ValidateFieldsMiddleware = require('./ValidateFieldsMiddleware');
+const ValidateUploadFileMiddleware = require("./ValidateUploadFileMiddleware");
 
 module.exports = {
-    ...ValidateUploadFileMiddleware,
-    ...ValidateFieldsMiddleware,
-}
+  ...ValidateUploadFileMiddleware,
+};

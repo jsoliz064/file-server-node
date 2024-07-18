@@ -1,6 +1,6 @@
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
+const fs = require("fs");
 
 const getFileBase64 = (filePath) => {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,7 @@ const getFileBase64 = (filePath) => {
       return resolve(null);
     }
 
-    fs.readFile(filePath, { encoding: 'base64' }, (err, data) => {
+    fs.readFile(filePath, { encoding: "base64" }, (err, data) => {
       if (err) {
         reject(err);
       }
@@ -17,70 +17,79 @@ const getFileBase64 = (filePath) => {
   });
 };
 
-
 const deleteFile = (filePath) => {
+  filePath = path.join(process.cwd(), `/public/${filePath}`);
+  console.log(filePath);
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(filePath)) {
-      resolve('File deleted successfully');
+      resolve("File deleted successfully");
     }
 
     fs.unlink(filePath, (err) => {
       if (err) {
         reject(err);
       }
-      resolve('File deleted successfully');
+      resolve("File deleted successfully");
     });
   });
 };
 
-const uploadFile = (file, validExtensions = ['pdf'], fileName = null) => {
-
+const uploadFile = (file, validExtensions = ["*"], fileName = null) => {
   return new Promise((resolve, reject) => {
+    const shortname = file.name.split(".");
+    const fileExtension = shortname[shortname.length - 1];
 
-    const shortname = file.name.split('.');
-    const extension = shortname[shortname.length - 1];
-
-    // Validar la extension
-    if (!validExtensions.includes(extension)) {
-      return reject(`La extensión ${extension} no es permitida - ${validExtensions}`);
+    if (
+      !validExtensions.includes("*") &&
+      !validExtensions.includes(fileExtension)
+    ) {
+      return reject(
+        new Error(
+          `Invalid extension: ${fileExtension}. only: ${validExtensions}`
+        )
+      );
     }
 
-    const uploadFolderPath = path.join(__dirname, `../../uploads/`);
+    const uploadFolderPath = path.join(process.cwd(), `/public/uploads`);
     if (!fs.existsSync(uploadFolderPath)) {
       fs.mkdirSync(uploadFolderPath);
     }
 
     if (!fileName) {
-      fileName = uuidv4() + '.' + extension;
+      fileName = uuidv4() + "." + fileExtension;
     } else {
-      fileName = fileName + '.' + extension;
+      fileName = fileName + "." + fileExtension;
     }
-    const filePath = `./uploads/${fileName}`;
-    const uploadPath = path.join(__dirname, '../../', filePath);
+    const filePath = `uploads/${fileName}`;
+    const uploadPath = path.join(process.cwd(), "/public/", filePath);
 
     file.mv(uploadPath, (err) => {
       if (err) {
         reject(err);
       }
-      resolve({ fileName, filePath });
+      resolve({ fileName, fileExtension, filePath });
     });
-
   });
-
-}
+};
 
 const validateFileExtension = (file, extension) => {
   if (!file) {
     return false;
   }
-  const shortname = file.originalname.split('.');
+  const shortname = file.originalname.split(".");
   const fileExtension = shortname[shortname.length - 1];
   return fileExtension === extension;
-}
+};
+
+const getMime = async (filePath) => {
+  const mime = await import("mime");
+  return mime.default.getType(filePath);
+};
 
 module.exports = {
   uploadFile,
   validateFileExtension,
   deleteFile,
-  getFileBase64
-}
+  getFileBase64,
+  getMime,
+};

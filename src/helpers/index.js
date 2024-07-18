@@ -1,7 +1,5 @@
-const UploadFileHelper = require('./UploadFileHelper');
-const ResponseErrorHelper = require('./ResponseErrorHelper');
+const UploadFileHelper = require("./UploadFileHelper");
 
 module.exports = {
-    ...UploadFileHelper,
-    ResponseErrorHelper,
-}
+  ...UploadFileHelper,
+};

@@ -1,33 +1,31 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-require("dotenv").config();
-const fileUpload = require('express-fileupload');
-const cors = require('cors');
-const fileRoute = require("./routes/file");
-// settings
+const fileUpload = require("express-fileupload");
+const cors = require("cors");
 const app = express();
+
+const fileRoute = require("./routes/file");
 const port = process.env.PORT || 3000;
 
-// middlewares
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(fileUpload({
-  useTempFiles: false,
-  tempFileDir: '/tmp/',
-  createParentPath: true,
-}));
-app.use("/api", fileRoute);
+app.use(
+  fileUpload({
+    useTempFiles: false,
+    tempFileDir: "/tmp/",
+    createParentPath: true,
+  })
+);
 
-// routes
-app.get("/", (req, res) => {
-  res.send("Welcome to my API");
-});
+app.use(express.static('public'));
 
-// mongodb connection
+app.use("/", fileRoute);
+
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((db) => console.log("Connected to MongoDB Atlas", db.connection.name))
   .catch((error) => console.error(error));
-// server listening
-app.listen(port, () => console.log("Server listening to", port));
+
+app.listen(port, () => console.log(`Server listening to: http://localhost:${port}`));

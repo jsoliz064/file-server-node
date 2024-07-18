@@ -1,90 +1,91 @@
 const fileSchema = require("../models/file");
-const { uploadFile, deleteFile, ResponseErrorHelper, getFileBase64 } = require("../helpers");
+const {
+  uploadFile,
+  deleteFile,
+  getFileBase64,
+  getMime,
+} = require("../helpers");
+
+const validExtensions = ["pdf", "docx", "png", "jpg", "jpeg", "gif"];
 
 const create = async (req, res) => {
-    try {
-        const { postulante_id, cargo_id } = req.body
-        let cvFile = null;
-        if (req.files) {
-            const { cv } = req.files;
-            cvFile = await uploadFile(cv);
-        }
-
-        const fileData = {
-            postulante_id: postulante_id,
-            cargo_id: cargo_id,
-            file_path: cvFile ? cvFile.filePath : null,
-            created_at: new Date()
-        }
-        const file = fileSchema(fileData);
-
-        file
-            .save()
-            .then((data) => res.json(data))
-            .catch((error) => res.json({ message: error }));
-    } catch (error) {
-        return ResponseErrorHelper.handle500({ res, error, msg: error.message })
+  try {
+    const { fileName } = req.files;
+    if (fileName == null) {
+      return res.status(400).json({ message: "fileName is required" });
     }
-}
+
+    const file = await uploadFile(fileName, validExtensions);
+
+    const fileData = {
+      fileName: file.fileName,
+      fileExtension: file.fileExtension,
+      filePath: file.filePath,
+      createdAt: new Date(),
+    };
+
+    const fileModel = fileSchema(fileData);
+
+    fileModel
+      .save()
+      .then((data) => res.json(data))
+      .catch((error) => res.status(500).json({ message: error }));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const getAll = (req, res) => {
-    fileSchema
-        .find()
-        .then((data) => res.json(data))
-        .catch((error) => res.json({ message: error }));
-}
+  fileSchema
+    .find()
+    .then((data) => res.json(data))
+    .catch((error) => res.status(500).json({ message: error.message }));
+};
 
 const getOne = async (req, res) => {
-    try {
-        const { id } = req.params;
-        // const file = await fileSchema.findById(id);
-        const file = await fileSchema.findOne({ postulante_id: id });
-
-        const base64 = await getFileBase64(file.file_path);
-
-        const data = {
-            _id: file._id,
-            postulante_id: file.postulante_id,
-            cargo_id: file.cargo_id,
-            created_at: file.created_at,
-            cvBase64: base64
-        }
-        res.json(data)
-    } catch (error) {
-        res.json({ message: error })
+  try {
+    const { id } = req.params;
+    const file = await fileSchema.findById(id);
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: `File with id: ${id} no encontrado` });
     }
-}
+    const base64 = await getFileBase64(file.filePath);
+    const fileBuffer = Buffer.from(base64, "base64");
+    const mimeType = await getMime(file.filePath);
+    res.writeHead(200, {
+      "Content-Type": mimeType,
+      "Content-Length": fileBuffer.length,
+    });
+    res.end(fileBuffer);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const destroy = async (req, res) => {
-    try {
-        const { id } = req.params;
-        // const file = await fileSchema.findById(id);
-        const file = await fileSchema.findOne({ postulante_id: id });
-
-        if (!file) {
-            return ResponseErrorHelper.handle400({ res, msg: 'File no encontrado' })
-        }
-        await deleteFile(file.file_path);
-        await file.remove();
-        return res.json({ message: "file eliminado" })
-    } catch (error) {
-        return ResponseErrorHelper.handle500({ res, error, msg: error.message })
-    }
-}
-
-const update = (req, res) => {
+  try {
     const { id } = req.params;
-    const { postulante_id, cargo_id, file_path } = req.body;
-    fileSchema
-        .updateOne({ _id: id }, { $set: { postulante_id, cargo_id, file_path } })
-        .then((data) => res.json(data))
-        .catch((error) => res.json({ message: error }));
-}
+    const file = await fileSchema.findById(id);
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: `File with id: ${id} no encontrado` });
+    }
+
+    await deleteFile(file.filePath);
+    await file.remove();
+    res.json({ message: `file with id: ${id} delelted` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports = {
-    create,
-    getAll,
-    getOne,
-    destroy,
-    update
+  create,
+  getAll,
+  getOne,
+  destroy,
 };
