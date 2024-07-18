@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  app1:
+  server:
     build:
       context: ./
       dockerfile: Dockerfile
@@ -9,10 +9,5 @@ services:
     container_name: serverfile
     hostname: serverfile
     ports:
-      - 3000:3000
-    networks:
-      - sw2-network
+      - "${PORT}:${PORT}"
 
-networks:
-  sw2-network:
-    external: true
