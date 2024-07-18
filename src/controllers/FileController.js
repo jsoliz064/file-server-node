@@ -31,6 +31,7 @@ const create = async (req, res) => {
       .then((data) => res.json(data))
       .catch((error) => res.status(500).json({ message: error }));
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -60,6 +61,7 @@ const getOne = async (req, res) => {
     });
     res.end(fileBuffer);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -79,6 +81,7 @@ const destroy = async (req, res) => {
     await file.remove();
     res.json({ message: `file with id: ${id} delelted` });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
